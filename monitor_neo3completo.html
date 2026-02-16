@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monitor Neonatal Completo</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  .container {
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  #clock {
+    font-size: 18px;
+  }
+
+  /* CRONÓMETRO GRANDE */
+  #cronometro {
+    font-size: 40px;
+    padding: 8px 18px;
+    background: #111;
+    border: 3px solid #0ff;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    min-width: 140px;
+    text-align: center;
+  }
+
+  #pesoBox {
+    font-size: 22px;
+    padding: 4px 10px;
+    background: #111;
+    border: 2px solid #888;
+    border-radius: 6px;
+    cursor: ns-resize;
+    user-select: none;
+  }
+  .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #resetBtn {
+    padding: 6px 12px;
+    background: #222;
+    border: 1px solid #888;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #volumeControl {
+    width: 100px;
+  }
+
+  .waves {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  canvas {
+    width: 100%;
+    height: 70px;
+    background: #000;
+    border: 1px solid #222;
+  }
+
+  .params {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 6px;
+  }
+  .param {
+    text-align: center;
+    user-select: none;
+  }
+  .param-label {
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+  .param-value {
+    font-size: 40px;
+    font-weight: bold;
+    padding: 10px 16px;
+    background: #111;
+    border: 3px solid #444;
+    border-radius: 8px;
+    cursor: ns-resize;
+    min-width: 110px;
+    transition: color 0.2s;
+  }
+
+  /* PARPADEO */
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1; }
+  }
+  .blink {
+    animation: blink 1s infinite;
+  }
+
+  .param-value.active {
+    border-color: #0ff;
+    box-shadow: 0 0 10px #0ff;
+  }
+  .param-unit {
+    font-size: 14px;
+    margin-top: 2px;
+  }
+  .alarm {
+    color: #f44336;
+    font-size: 14px;
+    height: 18px;
+    margin-top: 2px;
+  }
+  .range-box {
+    margin-top: 2px;
+    font-size: 11px;
+  }
+  .range-box input {
+    width: 40px;
+    background: #111;
+    border: 1px solid #555;
+    color: #fff;
+    font-size: 11px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <div>Peso: <span id="pesoBox">3.0</span> kg</div>
+    <div>Hora: <span id="clock"></span></div>
+
+    <div class="controls-right">
+      <label style="font-size:12px;">Vol alarma
+        <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="0.6">
+      </label>
+      <button id="resetBtn">Reset</button>
+      <div id="cronometro">00:00</div>
+    </div>
+  </div>
+
+  <div class="waves">
+    <canvas id="ecg"></canvas>
+    <canvas id="resp"></canvas>
+    <canvas id="pleth"></canvas>
+  </div>
+
+  <div class="params">
+
+    <!-- FRECUENCIA CARDIACA CON COLORES Y PARPADEO -->
+    <div class="param" data-param="hr">
+      <div class="param-label">FC</div>
+      <div class="param-value" id="hrValue">00</div>
+      <div class="param-unit">lpm</div>
+      <div class="alarm" id="hrAlarm"></div>
+      <div class="range-box">
+        Rango:
+        <input id="hrMin" type="number" value="100">-
+        <input id="hrMax" type="number" value="160">
+      </div>
+    </div>
+
+    <div class="param" data-param="rr">
+      <div class="param-label">FR</div>
+      <div class="param-value" id="rrValue">00</div>
+      <div class="param-unit">rpm</div>
+      <div class="alarm" id="rrAlarm"></div>
+      <div class="range-box">
+        Rango:
+        <input id="rrMin" type="number" value="40">-
+        <input id="rrMax" type="number" value="60">
+      </div>
+    </div>
+
+    <div class="param" data-param="temp">
+      <div class="param-label">Temp</div>
+      <div class="param-value" id="tempValue">00</div>
+      <div class="param-unit">°C</div>
+      <div class="alarm" id="tempAlarm"></div>
+      <div class="range-box">
+        Rango:
+        <input id="tempMin" type="number" step="0.1" value="36">-
+        <input id="tempMax" type="number" step="0.1" value="37.5">
+      </div>
+    </div>
+
+    <div class="param" data-param="spo2">
+      <div class="param-label">SpO₂</div>
+      <div class="param-value" id="spo2Value">00</div>
+      <div class="param-unit">%</div>
+      <div class="alarm" id="spo2Alarm"></div>
+      <div class="range-box">
+        Rango:
+        <input id="spo2Min" type="number" value="80">-
+        <input id="spo2Max" type="number" value="96">
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+/* -----------------------------
+   ESTADO PRINCIPAL
+------------------------------*/
+let hr = 0, rr = 0, temp = 0, spo2 = 0;
+let peso = 3.0;
+
+const startValues = { hr:150, rr:50, temp:36, spo2:60 };
+
+let alarmRanges = {
+  hr:   [100, 160],
+  rr:   [40, 60],
+  temp: [36, 37.5],
+  spo2: [80, 96]
+};
+
+/* ELEMENTOS */
+const hrEl   = document.getElementById("hrValue");
+const rrEl   = document.getElementById("rrValue");
+const tempEl = document.getElementById("tempValue");
+const spo2El = document.getElementById("spo2Value");
+
+const hrAlarm   = document.getElementById("hrAlarm");
+const rrAlarm   = document.getElementById("rrAlarm");
+const tempAlarm = document.getElementById("tempAlarm");
+const spo2Alarm = document.getElementById("spo2Alarm");
+
+const pesoBox = document.getElementById("pesoBox");
+const clockEl = document.getElementById("clock");
+
+/* RANGOS EDITABLES */
+const hrMinEl   = document.getElementById("hrMin");
+const hrMaxEl   = document.getElementById("hrMax");
+const rrMinEl   = document.getElementById("rrMin");
+const rrMaxEl   = document.getElementById("rrMax");
+const tempMinEl = document.getElementById("tempMin");
+const tempMaxEl = document.getElementById("tempMax");
+const spo2MinEl = document.getElementById("spo2Min");
+const spo2MaxEl = document.getElementById("spo2Max");
+
+function updateRangesFromInputs() {
+  alarmRanges.hr   = [parseFloat(hrMinEl.value),   parseFloat(hrMaxEl.value)];
+  alarmRanges.rr   = [parseFloat(rrMinEl.value),   parseFloat(rrMaxEl.value)];
+  alarmRanges.temp = [parseFloat(tempMinEl.value), parseFloat(tempMaxEl.value)];
+  alarmRanges.spo2 = [parseFloat(spo2MinEl.value), parseFloat(spo2MaxEl.value)];
+}
+[hrMinEl,hrMaxEl,rrMinEl,rrMaxEl,tempMinEl,tempMaxEl,spo2MinEl,spo2MaxEl]
+  .forEach(el => el.addEventListener("change", updateRangesFromInputs));
+
+/* -----------------------------
+   RELOJ REAL
+------------------------------*/
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+  const s = String(now.getSeconds()).padStart(2,"0");
+  clockEl.textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* -----------------------------
+   DISPLAY Y ALARMAS
+------------------------------*/
+function updateDisplay() {
+  hrEl.textContent   = hr === 0 ? "00" : Math.round(hr).toString().padStart(2,"0");
+  rrEl.textContent   = rr === 0 ? "00" : Math.round(rr).toString().padStart(2,"0");
+  tempEl.textContent = temp === 0 ? "00" : temp.toFixed(1);
+  spo2El.textContent = spo2 === 0 ? "00" : Math.round(spo2).toString().padStart(2,"0");
+
+  updateHRColor();
+  checkAlarms();
+}
+
+/* -----------------------------
+   COLORES Y PARPADEO FC
+------------------------------*/
+function updateHRColor() {
+  hrEl.classList.remove("blink");
+
+  if (hr >= 100 && hr <= 160) {
+    hrEl.style.color = "#00ff00"; // verde
+  }
+  else if (hr >= 61 && hr <= 99) {
+    hrEl.style.color = "#ffff00"; // amarillo
+    hrEl.classList.add("blink");
+  }
+  else if (hr <= 60 && hr > 0) {
+    hrEl.style.color = "#ff0000"; // rojo
+    hrEl.classList.add("blink");
+  }
+  else {
+    hrEl.style.color = "#ffffff";
+  }
+}
+
+/* -----------------------------
+   ALARMAS
+------------------------------*/
+function checkAlarms() {
+  const a1 = checkOne(hr,   alarmRanges.hr,   hrAlarm,   "FC fuera de rango");
+  const a2 = checkOne(rr,   alarmRanges.rr,   rrAlarm,   "FR fuera de rango");
+  const a3 = checkOne(spo2, alarmRanges.spo2, spo2Alarm, "Sat fuera de rango");
+  const a4 = checkOne(temp, alarmRanges.temp, tempAlarm, "Temp fuera de rango");
+  const anyAlarm = a1 || a2 || a3 || a4;
+  setAlarmSound(anyAlarm);
+}
+
+function checkOne(value, range, alarmEl, msg) {
+  if (value === 0) {
+    alarmEl.textContent = "";
+    return false;
+  }
+  if (value < range[0] || value > range[1]) {
+    alarmEl.textContent = msg;
+    return true;
+  } else {
+    alarmEl.textContent = "";
+    return false;
+  }
+}
+
+/* -----------------------------
+   AUDIO DE ALARMA
+------------------------------*/
+let audioCtx = null;
+let gainNode = null;
+let alarmInterval = null;
+const volumeControl = document.getElementById("volumeControl");
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = parseFloat(volumeControl.value);
+    gainNode.connect(audioCtx.destination);
+  }
+}
+volumeControl.addEventListener("input", () => {
+  if (gainNode) gainNode.gain.value = parseFloat(volumeControl.value);
+});
+
+function beepOnce() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  osc.type = "square";
+  osc.frequency.value = 1000;
+  osc.connect(gainNode);
+  osc.start();
+  setTimeout(() => osc.stop(), 150);
+}
+
+function setAlarmSound(active) {
+  if (active) {
+    initAudio();
+    if (!alarmInterval) {
+      beepOnce();
+      alarmInterval = setInterval(beepOnce, 1000);
+    }
+  } else {
+    if (alarmInterval) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
+  }
+}
+
+/* -----------------------------
+   ONDAS (ECG, RESP, PLETH)
+------------------------------*/
+const ecgCanvas  = document.getElementById("ecg");
+const respCanvas = document.getElementById("resp");
+const plethCanvas= document.getElementById("pleth");
+
+function resizeCanvas(c) {
+  c.width  = c.clientWidth;
+  c.height = c.clientHeight;
+}
+[ecgCanvas,respCanvas,plethCanvas].forEach(resizeCanvas);
+window.addEventListener("resize", () => {
+  [ecgCanvas,respCanvas,plethCanvas].forEach(resizeCanvas);
+});
+
+const ecgCtx  = ecgCanvas.getContext("2d");
+const respCtx = respCanvas.getContext("2d");
+const plethCtx= plethCanvas.getContext("2d");
+
+let t = 0;
+
+function drawGrid(ctx, w, h) {
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+  const gridSize = 10;
+  for (let x=0; x<w; x+=gridSize) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+  }
+  for (let y=0; y<h; y+=gridSize) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+}
+
+function drawECG() {
+  const ctx = ecgCtx;
+  const w = ecgCanvas.width;
+  const h = ecgCanvas.height;
+  ctx.clearRect(0,0,w,h);
+  drawGrid(ctx,w,h);
+
+  ctx.strokeStyle = "#0f0";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  const baseline = h*0.5;
+  const bpm = Math.max(hr || 60, 20);
+  const cps = bpm/60;
+  const speed = 2;
+
+  for (let x=0; x<w; x++) {
+    const time = (t + x)/ (60*speed);
+    const phase = time * cps * 2*Math.PI;
+    let y = baseline;
+    const local = phase % (2*Math.PI);
+    if (local < 0.1*Math.PI) {
+      y -= 15 * Math.sin(local*10);
+    } else if (local < 0.3*Math.PI) {
+      y -= 35 * Math.sin((local-0.1*Math.PI)*15);
+    } else if (local < 0.5*Math.PI) {
+      y -= 10 * Math.sin((local-0.3*Math.PI)*5);
+    }
+    if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawResp() {
+  const ctx = respCtx;
+  const w = respCanvas.width;
+  const h = respCanvas.height;
+  ctx.clearRect(0,0,w,h);
+  drawGrid(ctx,w,h);
+
+  ctx.strokeStyle = "#00bcd4";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  const baseline = h*0.6;
+  const rpm = Math.max(rr || 40, 1);
+  const cps = rpm/60;
+  const amp = 18;
+
+  for (let x=0; x<w; x++) {
+    const time = (t + x)/120;
+    const phase = time * cps * 2*Math.PI;
+    const y = baseline - amp * Math.sin(phase);
+    if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawPleth() {
+  const ctx = plethCtx;
+  const w = plethCanvas.width;
+  const h = plethCanvas.height;
+  ctx.clearRect(0,0,w,h);
+  drawGrid(ctx,w,h);
+
+  ctx.strokeStyle = "#f44336";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  const baseline = h*0.5;
+  const bpm = Math.max(hr || 60, 20);
+  const cps = bpm/60;
+  const normSpo2 = Math.max(0, Math.min(100, spo2 || 60));
+  const amp = 10 + (normSpo2/100)*20;
+  const noiseFactor = (100-normSpo2)/100 * 4;
+
+  for (let x=0; x<w; x++) {
+    const time = (t + x)/80;
+    const phase = time * cps * 2*Math.PI;
+    let y = baseline - amp * Math.max(0, Math.sin(phase));
+    y += (Math.random()-0.5)*noiseFactor;
+    if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function loop() {
+  t += 1;
+  drawECG();
+  drawResp();
+  drawPleth();
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* -----------------------------
+   INTERACCIÓN PARÁMETROS
+------------------------------*/
+document.querySelectorAll(".param").forEach(p => {
+  p.addEventListener("click", () => {
+    const name = p.dataset.param;
+    if (eval(name) === 0) {
+      eval(`${name} = startValues[name]`);
+      updateDisplay();
+    }
+  });
+});
+
+let activeParam = null;
+let startY = 0;
+let startValue = 0;
+
+function startAdjust(e, param) {
+  e.preventDefault();
+  activeParam = param;
+  startY = e.touches ? e.touches[0].clientY : e.clientY;
+  startValue = eval(param);
+  const box = document.querySelector(`.param[data-param="${param}"] .param-value`);
+  box.classList.add("active");
+}
+
+function moveAdjust(e) {
+  if (!activeParam || activeParam==="peso") return;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const delta = (startY - y) * 0.2;
+  let newVal = startValue + delta;
+  if (activeParam === "temp") newVal = Math.max(30, Math.min(41, newVal));
+  else newVal = Math.max(0, Math.min(250, newVal));
+  eval(`${activeParam} = newVal`);
+  updateDisplay();
+}
+
+function endAdjust() {
+  if (!activeParam || activeParam==="peso") { activeParam=null; return; }
+  const box = document.querySelector(`.param[data-param="${activeParam}"] .param-value`);
+  if (box) box.classList.remove("active");
+  activeParam = null;
+}
+
+document.querySelectorAll(".param").forEach(p => {
+  const name = p.dataset.param;
+  p.addEventListener("mousedown", e => startAdjust(e,name));
+  p.addEventListener("touchstart", e => startAdjust(e,name), {passive:false});
+});
+
+window.addEventListener("mousemove", moveAdjust);
+window.addEventListener("touchmove", moveAdjust, {passive:false});
+window.addEventListener("mouseup", endAdjust);
+window.addEventListener("touchend", endAdjust);
+
+/* -----------------------------
+   AJUSTE DE PESO
+------------------------------*/
+pesoBox.addEventListener("mousedown", e => {
+  activeParam = "peso";
+  startY = e.clientY;
+  startValue = peso;
+});
+pesoBox.addEventListener("touchstart", e => {
+  activeParam = "peso";
+  startY = e.touches[0].clientY;
+  startValue = peso;
+}, {passive:false});
+
+function adjustPeso(e) {
+  if (activeParam !== "peso") return;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const delta = (startY - y) * 0.01;
+  peso = Math.max(0.5, Math.min(6, startValue + delta));
+  pesoBox.textContent = peso.toFixed(1);
+}
+window.addEventListener("mousemove", adjustPeso);
+window.addEventListener("touchmove", adjustPeso, {passive:false});
+window.addEventListener("mouseup", () => { if(activeParam==="peso") activeParam=null; });
+window.addEventListener("touchend", () => { if(activeParam==="peso") activeParam=null; });
+
+/* -----------------------------
+   CRONÓMETRO REANIMACIÓN
+------------------------------*/
+let cronometroActivo = false;
+let tiempo = 0;
+let intervalo = null;
+const cronometroEl = document.getElementById("cronometro");
+
+cronometroEl.addEventListener("click", () => {
+  if (!cronometroActivo) {
+    cronometroActivo = true;
+    intervalo = setInterval(() => {
+      tiempo++;
+      const m = String(Math.floor(tiempo/60)).padStart(2,"0");
+      const s = String(tiempo%60).padStart(2,"0");
+      cronometroEl.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+});
+
+/* -----------------------------
+   RESET DE ESCENARIO
+------------------------------*/
+document.getElementById("resetBtn").addEventListener("click", () => {
+  hr = rr = temp = spo2 = 0;
+  tiempo = 0;
+  cronometroActivo = false;
+  if (intervalo) { clearInterval(intervalo); intervalo = null; }
+  cronometroEl.textContent = "00:00";
+  setAlarmSound(false);
+  updateDisplay();
+});
+
+updateDisplay();
+</script>
+</body>
+</html>

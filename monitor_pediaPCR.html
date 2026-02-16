@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monitor de Signos Vitales – Simulador</title>
+
+<style>
+    body {
+        background: #000;
+        color: #fff;
+        font-family: "Consolas", monospace;
+        text-align: center;
+    }
+    h1 {
+        margin-top: 10px;
+        margin-bottom: 5px;
+    }
+    .monitor {
+        border: 4px solid #00ff00;
+        padding: 15px;
+        width: 1000px;
+        margin: 10px auto;
+        background: #000;
+    }
+    .fila {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .bloque {
+        margin: 5px 10px;
+        min-width: 220px;
+    }
+    .titulo-param {
+        font-size: 20px;
+    }
+    .valor {
+        font-size: 56px;
+        font-weight: bold;
+        margin: 5px 0;
+        cursor: pointer;
+    }
+    .unidad {
+        font-size: 18px;
+        color: #ccc;
+    }
+    button {
+        margin: 2px;
+        padding: 4px 10px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #444;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    button:hover {
+        background: #00ff00;
+        color: #000;
+    }
+    input {
+        width: 70px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #444;
+        text-align: center;
+        font-size: 14px;
+    }
+    label {
+        font-size: 12px;
+        color: #bbb;
+    }
+    .alarma-activa {
+        border-color: #ff0000;
+        box-shadow: 0 0 20px #ff0000;
+    }
+    .texto-alarma {
+        color: #ff0000;
+        font-weight: bold;
+        font-size: 18px;
+        min-height: 24px;
+        margin-top: 5px;
+    }
+    .banda {
+        margin-top: 8px;
+    }
+    canvas {
+        background: #000;
+        border: 1px solid #222;
+        display: block;
+        margin: 4px auto;
+    }
+    .etiqueta-onda {
+        text-align: left;
+        color: #aaa;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Monitor de Signos Vitales – Simulador</h1>
+
+<button onclick="reiniciarEscenario()" style="font-size:20px; padding:10px 20px; margin-bottom:15px;">
+    🔄 REINICIAR ESCENARIO
+</button>
+
+<div id="monitor" class="monitor">
+    <div class="fila">
+
+        <!-- FC -->
+        <div class="bloque">
+            <div class="titulo-param">FC</div>
+            <div class="valor">
+                <span id="fc" onclick="activarParametro('fc')">00</span>
+                <span class="unidad">bpm</span>
+            </div>
+            <button onclick="cambiar('fc', 1)">+1</button>
+            <button onclick="cambiar('fc', -1)">-1</button><br>
+            <label>FC min:</label> <input id="fc_min" type="number" value="100">
+            <label>FC max:</label> <input id="fc_max" type="number" value="160">
+        </div>
+
+        <!-- FR -->
+        <div class="bloque">
+            <div class="titulo-param">FR</div>
+            <div class="valor">
+                <span id="fr" onclick="activarParametro('fr')">00</span>
+                <span class="unidad">rpm</span>
+            </div>
+            <button onclick="cambiar('fr', 1)">+1</button>
+            <button onclick="cambiar('fr', -1)">-1</button><br>
+            <label>FR min:</label> <input id="fr_min" type="number" value="40">
+            <label>FR max:</label> <input id="fr_max" type="number" value="60">
+        </div>
+
+        <!-- SpO2 -->
+        <div class="bloque">
+            <div class="titulo-param">SpO₂</div>
+            <div class="valor">
+                <span id="spo2" onclick="activarParametro('spo2')">00</span>
+                <span class="unidad">%</span>
+            </div>
+            <button onclick="cambiar('spo2', 1)">+1</button>
+            <button onclick="cambiar('spo2', -1)">-1</button><br>
+            <label>SpO₂ min:</label> <input id="spo2_min" type="number" value="80">
+            <label>SpO₂ max:</label> <input id="spo2_max" type="number" value="96">
+        </div>
+
+        <!-- Temp -->
+        <div class="bloque">
+            <div class="titulo-param">Temp</div>
+            <div class="valor">
+                <span id="temp" onclick="activarParametro('temp')">00</span>
+                <span class="unidad">°C</span>
+            </div>
+            <button onclick="cambiar('temp', 0.1)">+0.1</button>
+            <button onclick="cambiar('temp', -0.1)">-0.1</button><br>
+            <label>Temp min:</label> <input id="temp_min" type="number" step="0.1" value="36.0">
+            <label>Temp max:</label> <input id="temp_max" type="number" step="0.1" value="37.5">
+        </div>
+
+    </div>
+
+    <div class="texto-alarma" id="mensaje_alarma"></div>
+
+    <div class="banda">
+        <div class="etiqueta-onda">ECG</div>
+        <canvas id="ekg" width="960" height="90"></canvas>
+    </div>
+
+    <div class="banda">
+        <div class="etiqueta-onda">Pleth (SpO₂)</div>
+        <canvas id="pleth" width="960" height="70"></canvas>
+    </div>
+
+    <div class="banda">
+        <div class="etiqueta-onda">Resp</div>
+        <canvas id="resp" width="960" height="60"></canvas>
+    </div>
+</div>
+
+<audio id="audio_qrs">
+    <source src="beep.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+let datos = { fc: 0, fr: 0, spo2: 0, temp: 0 };
+
+/* NUEVOS VALORES INICIALES */
+const objetivos = { 
+    fc: 20, 
+    fr: 0, 
+    spo2: 0, 
+    temp: 35 
+};
+
+let activado = { fc: false, fr: false, spo2: false, temp: false };
+
+function activarParametro(param) {
+    if (activado[param]) return;
+    activado[param] = true;
+
+    datos[param] = objetivos[param];
+    document.getElementById(param).innerText = datos[param];
+
+    evaluarAlarmas();
+    if (param === "fc") actualizarColorFC();
+}
+
+function cambiar(param, delta) {
+    if (!activado[param] && datos[param] === 0) activado[param] = true;
+
+    let nuevo = datos[param] + delta;
+    if (param !== "temp") nuevo = Math.round(nuevo);
+
+    datos[param] = nuevo;
+    document.getElementById(param).innerText = datos[param];
+
+    evaluarAlarmas();
+    if (param === "fc") actualizarColorFC();
+}
+
+function reiniciarEscenario() {
+    datos = { fc: 0, fr: 0, spo2: 0, temp: 0 };
+    activado = { fc: false, fr: false, spo2: false, temp: false };
+
+    document.getElementById("fc").innerText = "00";
+    document.getElementById("fr").innerText = "00";
+    document.getElementById("spo2").innerText = "00";
+    document.getElementById("temp").innerText = "00";
+
+    document.getElementById("mensaje_alarma").innerText = "";
+    document.getElementById("monitor").classList.remove("alarma-activa");
+}
+
+function evaluarAlarmas() {
+    let mensaje = [];
+    let alarma = false;
+
+    function check(p, minId, maxId, label) {
+        let v = datos[p];
+        let min = parseFloat(document.getElementById(minId).value);
+        let max = parseFloat(document.getElementById(maxId).value);
+        if (v < min || v > max) {
+            alarma = true;
+            mensaje.push(`${label} fuera de rango (${v})`);
+        }
+    }
+
+    check("fc", "fc_min", "fc_max", "FC");
+    check("fr", "fr_min", "fr_max", "FR");
+    check("spo2", "spo2_min", "spo2_max", "SpO₂");
+    check("temp", "temp_min", "temp_max", "Temp");
+
+    const monitor = document.getElementById("monitor");
+    const texto = document.getElementById("mensaje_alarma");
+
+    if (alarma) {
+        monitor.classList.add("alarma-activa");
+        texto.innerText = mensaje.join(" | ");
+    } else {
+        monitor.classList.remove("alarma-activa");
+        texto.innerText = "";
+    }
+}
+
+/* COLORES DINÁMICOS FC */
+function actualizarColorFC() {
+    const fcValor = document.getElementById("fc");
+    const fc = datos.fc;
+
+    if (fc >= 100 && fc <= 160) {
+        fcValor.style.color = "#00ff00"; // Verde
+    } 
+    else if (fc >= 61 && fc <= 99) {
+        fcValor.style.color = "#ffff00"; // Amarillo
+    } 
+    else if (fc <= 60) {
+        fcValor.style.color = "#ff0000"; // Rojo
+    }
+}
+
+/* ONDAS */
+const ekgCanvas = document.getElementById("ekg");
+const ekgCtx = ekgCanvas.getContext("2d");
+
+const plethCanvas = document.getElementById("pleth");
+const plethCtx = plethCanvas.getContext("2d");
+
+const respCanvas = document.getElementById("resp");
+const respCtx = respCanvas.getContext("2d");
+
+let ultimoLatido = Date.now();
+let beepHecho = false;
+
+let fasePleth = 0;
+let faseResp = 0;
+
+function dibujarEKG() {
+    const w = ekgCanvas.width;
+    const h = ekgCanvas.height;
+
+    const img = ekgCtx.getImageData(1, 0, w - 1, h);
+    ekgCtx.putImageData(img, 0, 0);
+    ekgCtx.clearRect(w - 1, 0, 1, h);
+
+    let fc = Math.max(datos.fc, 1);
+    let intervalo = 60000 / fc;
+    let ahora = Date.now();
+    let progreso = (ahora - ultimoLatido) / intervalo;
+
+    if (progreso >= 1) {
+        ultimoLatido = ahora;
+        progreso = 0;
+        beepHecho = false;
+    }
+
+    let yBase = h / 2;
+    let y = yBase;
+
+    if (progreso < 0.12) {
+        y = yBase - 8 * Math.sin(progreso * Math.PI / 0.12);
+    } else if (progreso < 0.20) {
+        y = yBase;
+    } else if (progreso < 0.24) {
+        y = yBase + 15 * (progreso - 0.20) / 0.04;
+    } else if (progreso < 0.27) {
+        y = yBase - 45 * Math.sin((progreso - 0.24) * Math.PI / 0.03);
+        if (!beepHecho && activado.fc) {
+            const audio = document.getElementById("audio_qrs");
+            try { audio.currentTime = 0; audio.play(); } catch(e){}
+            beepHecho = true;
+        }
+    } else if (progreso < 0.32) {
+        y = yBase + 20 * (progreso - 0.27) / 0.05;
+    } else if (progreso < 0.50) {
+        y = yBase;
+    } else if (progreso < 0.75) {
+        y = yBase - 12 * Math.sin((progreso - 0.50) * Math.PI / 0.25);
+    } else {
+        y = yBase;
+    }
+
+    y += (Math.random() - 0.5) * 2;
+
+    ekgCtx.fillStyle = "#00ff00";
+    ekgCtx.fillRect(w - 1, y, 2, 2);
+}
+
+function dibujarPleth() {
+    const w = plethCanvas.width;
+    const h = plethCanvas.height;
+
+    const img = plethCtx.getImageData(1, 0, w - 1, h);
+    plethCtx.putImageData(img, 0, 0);
+    plethCtx.clearRect(w - 1, 0, 1, h);
+
+    let fc = Math.max(datos.fc, 1);
+    fasePleth += (fc / 60) * 0.1;
+    if (fasePleth > 2 * Math.PI) fasePleth -= 2 * Math.PI;
+
+    let yBase = h / 2;
+    let amp = 18;
+    let y = yBase - amp * Math.pow(Math.sin(fasePleth), 3);
+
+    y += (Math.random() - 0.5) * 1.5;
+
+    plethCtx.fillStyle = "#00ffff";
+    plethCtx.fillRect(w - 1, y, 2, 2);
+}
+
+function dibujarResp() {
+    const w = respCanvas.width;
+    const h = respCanvas.height;
+
+    const img = respCtx.getImageData(1, 0, w - 1, h);
+    respCtx.putImageData(img, 0, 0);
+    respCtx.clearRect(w - 1, 0, 1, h);
+
+    let fr = Math.max(datos.fr, 1);
+    faseResp += (fr / 60) * 0.1;
+    if (faseResp > 2 * Math.PI) faseResp -= 2 * Math.PI;
+
+    let yBase = h / 2;
+    let amp = 18;
+    let y = yBase - amp * Math.sin(faseResp);
+
+    y += (Math.random() - 0.5) * 1;
+
+    respCtx.fillStyle = "#ffff00";
+    respCtx.fillRect(w - 1, y, 2, 2);
+}
+
+function loop() {
+    dibujarEKG();
+    dibujarPleth();
+    dibujarResp();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Expediente Clínico Pediátrico - Dr. Miguel Ángel Morales Meza</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+        }
+        header {
+            background: #1f4e79;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        header p {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+        .sidebar {
+            width: 30%;
+            border-right: 1px solid #ccc;
+            background: #ffffff;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .main {
+            width: 70%;
+            padding: 10px 20px;
+            overflow-y: auto;
+        }
+        h2 {
+            font-size: 16px;
+            margin-top: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+        }
+        h3 {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        label {
+            font-size: 13px;
+            display: block;
+            margin-top: 6px;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 4px 6px;
+            margin-top: 2px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+        .row > div {
+            flex: 1;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 3px;
+            border: 1px solid #1f4e79;
+            background: #1f4e79;
+            color: white;
+        }
+        .btn.secondary {
+            background: #ffffff;
+            color: #1f4e79;
+        }
+        .btn.small {
+            padding: 3px 7px;
+            font-size: 12px;
+        }
+        .patient-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .patient-list li {
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .patient-list li:hover {
+            background: #f0f4ff;
+        }
+        .section-toggle {
+            cursor: pointer;
+            font-size: 13px;
+            background: #e6ecf5;
+            padding: 4px 6px;
+            border-radius: 3px;
+            margin-top: 8px;
+        }
+        .section-content {
+            margin-top: 6px;
+            padding: 6px 8px;
+            background: #ffffff;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 0;
+        }
+        .small-note {
+            font-size: 11px;
+            color: #555;
+        }
+        .image-area {
+            border: 1px dashed #999;
+            padding: 8px;
+            min-height: 80px;
+            background: #fafafa;
+            font-size: 12px;
+        }
+        .image-preview {
+            display: inline-block;
+            margin: 4px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            background: white;
+            cursor: pointer;
+        }
+        .image-preview img {
+            max-width: 120px;
+            max-height: 120px;
+            display: block;
+        }
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+        }
+        .image-modal img {
+            max-width: 95%;
+            max-height: 95%;
+        }
+        .image-modal button {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            padding: 6px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .growth-modal img {
+            max-width: 70vw;
+            max-height: 70vh;
+        }
+        .nota-card {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #ffffff;
+            margin-top: 8px;
+            padding: 6px 8px;
+        }
+        .nota-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .nota-body {
+            margin-top: 6px;
+            font-size: 12px;
+            display: none;
+        }
+        .nota-meta {
+            font-size: 11px;
+            color: #666;
+        }
+        .historial-peso-list {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .readonly-field {
+            background: #f5f5f5;
+            border-radius: 3px;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            margin-top: 2px;
+            white-space: pre-wrap;
+        }
+        .readonly-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>EXPEDIENTE CLÍNICO PEDIÁTRICO</h1>
+    <p>DR. MIGUEL ÁNGEL MORALES MEZA · MÉDICO PEDIATRA · CÉDULA PROFESIONAL 4011259</p>
+    <p>CERTIFICADO POR EL CONSEJO MEXICANO DE PEDIATRÍA · INSTRUCTOR CERTIFICADO DE REANIMACIÓN NEONATAL</p>
+</header>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>Pacientes</h2>
+        <button class="btn secondary" id="btnNuevoPaciente">Nuevo paciente</button>
+        <button class="btn secondary" id="btnOrdenarNombre">Ordenar por nombre</button>
+        <ul id="listaPacientes" class="patient-list"></ul>
+        <p class="small-note">Los datos se guardan automáticamente en este equipo (LocalStorage).</p>
+    </div>
+
+    <div class="main">
+        <h2>Ficha de identificación (nota inicial)</h2>
+        <div class="row">
+            <div>
+                <label>Nombre del paciente</label>
+                <input type="text" id="nombre">
+            </div>
+            <div>
+                <label>Edad (años)</label>
+                <input type="number" id="edad" min="0" step="0.1">
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>Fecha de nacimiento</label>
+                <input type="date" id="fechaNacimiento">
+            </div>
+            <div>
+                <label>Lugar de nacimiento</label>
+                <input type="text" id="lugarNacimiento">
+            </div>
+        </div>
+
+        <h2>Antecedentes personales</h2>
+        <label>Alergias</label>
+        <textarea id="alergias"></textarea>
+
+        <label>Enfermedades subyacentes</label>
+        <textarea id="enfermedadesSubyacentes"></textarea>
+
+        <label>Hospitalizaciones previas</label>
+        <textarea id="hospitalizacionesPrevias"></textarea>
+
+        <h2>Antecedentes perinatales</h2>
+        <div class="section-toggle" data-target="secPerinatales">Mostrar / ocultar</div>
+        <div id="secPerinatales" class="section-content">
+            <textarea id="antecedentesPerinatales"></textarea>
+        </div>
+
+        <h2>Exploración física</h2>
+
+        <div class="section-content">
+            <div class="row">
+                <div>
+                    <label>Frecuencia cardiaca (lpm)</label>
+                    <input type="number" id="fc">
+                </div>
+                <div>
+                    <label>Frecuencia respiratoria (rpm)</label>
+                    <input type="number" id="fr">
+                </div>
+                <div>
+                    <label>Temperatura (°C)</label>
+                    <input type="number" id="temp" step="0.1">
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    <label>Saturación de oxígeno (%)</label>
+                    <input type="number" id="satO2">
+                </div>
+                <div>
+                    <label>Tensión arterial (mmHg)</label>
+                    <input type="text" id="ta" placeholder="Ej. 90/60">
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    <label>Peso (kg)</label>
+                    <input type="number" id="peso" step="0.01">
+                    <button class="btn small secondary" id="btnHistorialPeso" type="button">Mostrar historial de peso</button>
+                    <div id="historialPeso" class="section-content" style="display:none; margin-top:4px;">
+                        <p class="small-note">Historial de peso por fecha de consulta.</p>
+                        <div id="historialPesoLista" class="historial-peso-list"></div>
+                        <h3>Curvas de crecimiento</h3>
+                        <label>Notas / interpretación de curvas</label>
+                        <textarea id="curvasTexto" placeholder="Percentilas, interpretación, comentarios sobre evolución, etc."></textarea>
+                        <label>Marcas / anotaciones específicas</label>
+                        <textarea id="curvasNotas" placeholder="Marcas, observaciones puntuales, comentarios adicionales."></textarea>
+                        <p class="small-note">Agrega aquí tablas de peso/talla acorde a la edad. Doble clic para verlas al 70% de la pantalla.</p>
+                        <input type="file" id="inputCurvasImagenes" multiple accept="image/*">
+                        <div id="curvasImageArea" class="image-area">
+                            <span class="small-note">Vista previa de tablas / curvas:</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label>Talla (cm)</label>
+                    <input type="number" id="talla" step="0.1">
+                </div>
+                <div>
+                    <label>¿Menor de 1 año?</label>
+                    <select id="menorUnAnio">
+                        <option value="no">No</option>
+                        <option value="si">Sí</option>
+                    </select>
+                </div>
+            </div>
+            <div id="pcContainer" style="margin-top:6px; display:none;">
+                <label>Perímetro cefálico (cm)</label>
+                <input type="number" id="pc" step="0.1">
+            </div>
+        </div>
+
+        <div class="section-toggle" data-target="secExploracion">Mostrar / ocultar exploración detallada</div>
+        <div id="secExploracion" class="section-content">
+            <textarea id="exploracionFisica"></textarea>
+        </div>
+
+        <h2>Estudios de laboratorio y gabinete</h2>
+        <div class="section-toggle" data-target="secEstudios">Mostrar / ocultar</div>
+        <div id="secEstudios" class="section-content">
+            <textarea id="estudiosTexto" placeholder="Descripción, resultados relevantes, interpretación, etc."></textarea>
+            <p class="small-note">Puedes subir imágenes (RX, USG, TAC, ECG, fotos clínicas). Haz clic en ellas para verlas a pantalla completa.</p>
+            <input type="file" id="inputImagenes" multiple accept="image/*">
+            <div id="imageArea" class="image-area">
+                <span class="small-note">Vista previa de imágenes:</span>
+            </div>
+        </div>
+
+        <h2>Diagnósticos (nota inicial)</h2>
+        <div class="section-content">
+            <div class="checkbox-group">
+                <label><input type="checkbox" class="dxCheck" value="Infección respiratoria"> Infección respiratoria</label>
+                <label><input type="checkbox" class="dxCheck" value="Asma"> Asma</label>
+                <label><input type="checkbox" class="dxCheck" value="Desnutrición"> Desnutrición</label>
+                <label><input type="checkbox" class="dxCheck" value="Prematurez"> Prematurez</label>
+            </div>
+            <label>Diagnósticos (libre)</label>
+            <input type="text" id="dx1" placeholder="1.">
+            <input type="text" id="dx2" placeholder="2.">
+            <input type="text" id="dx3" placeholder="3.">
+            <input type="text" id="dx4" placeholder="4.">
+            <textarea id="dxTexto" placeholder="Notas diagnósticas adicionales"></textarea>
+        </div>
+
+        <h2>Tratamiento (nota inicial)</h2>
+        <div class="section-content">
+            <div class="checkbox-group">
+                <label><input type="checkbox" class="txCheck" value="Antibiótico"> Antibiótico</label>
+                <label><input type="checkbox" class="txCheck" value="Broncodilatador"> Broncodilatador</label>
+                <label><input type="checkbox" class="txCheck" value="Hidratación oral"> Hidratación oral</label>
+                <label><input type="checkbox" class="txCheck" value="Observación domiciliaria"> Observación domiciliaria</label>
+            </div>
+            <label>Tratamiento (libre)</label>
+            <input type="text" id="tx1" placeholder="1.">
+            <input type="text" id="tx2" placeholder="2.">
+            <input type="text" id="tx3" placeholder="3.">
+            <input type="text" id="tx4" placeholder="4.">
+            <textarea id="txTexto" placeholder="Indicaciones, dosis, duración, recomendaciones a cuidadores, etc."></textarea>
+        </div>
+
+        <button class="btn" id="btnGuardar">Guardar / actualizar paciente</button>
+
+        <h2>Notas clínicas subsecuentes</h2>
+        <button class="btn small secondary" id="btnAgregarNota" disabled>Agregar nota clínica</button>
+        <p class="small-note">Las notas subsecuentes se asocian al paciente actualmente cargado.</p>
+
+        <div id="formNota" class="section-content" style="display:none; margin-top:8px;">
+            <h3>Nueva nota clínica</h3>
+            <p class="small-note" id="notaPacienteInfo"></p>
+
+            <h3>Datos de la consulta</h3>
+            <div class="row">
+                <div>
+                    <label>Fecha de consulta</label>
+                    <input type="date" id="notaFecha">
+                </div>
+                <div>
+                    <label>Hora de consulta</label>
+                    <input type="time" id="notaHora">
+                </div>
+            </div>
+
+            <h3>Ficha de identificación (resumen)</h3>
+            <div class="row">
+                <div>
+                    <label>Nombre</label>
+                    <input type="text" id="notaNombre" readonly>
+                </div>
+                <div>
+                    <label>Edad (años)</label>
+                    <input type="number" id="notaEdad" readonly>
+                </div>
+            </div>
+
+            <h3>Antecedentes (nota clínica)</h3>
+            <textarea id="notaAntecedentes" placeholder="Cambios relevantes, antecedentes inmediatos, motivo de la nota, etc."></textarea>
+
+            <h3>Exploración física (nota clínica)</h3>
+            <div class="section-content">
+                <div class="row">
+                    <div>
+                        <label>Frecuencia cardiaca (lpm)</label>
+                        <input type="number" id="notaFc">
+                    </div>
+                    <div>
+                        <label>Frecuencia respiratoria (rpm)</label>
+                        <input type="number" id="notaFr">
+                    </div>
+                    <div>
+                        <label>Temperatura (°C)</label>
+                        <input type="number" id="notaTemp" step="0.1">
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label>Saturación de oxígeno (%)</label>
+                        <input type="number" id="notaSatO2">
+                    </div>
+                    <div>
+                        <label>Tensión arterial (mmHg)</label>
+                        <input type="text" id="notaTa" placeholder="Ej. 90/60">
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label>Peso (kg)</label>
+                        <input type="number" id="notaPeso" step="0.01">
+                    </div>
+                    <div>
+                        <label>Talla (cm)</label>
+                        <input type="number" id="notaTalla" step="0.1">
+                    </div>
+                    <div>
+                        <label>¿Menor de 1 año?</label>
+                        <select id="notaMenorUnAnio">
+                            <option value="no">No</option>
+                            <option value="si">Sí</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="notaPcContainer" style="margin-top:6px; display:none;">
+                    <label>Perímetro cefálico (cm)</label>
+                    <input type="number" id="notaPc" step="0.1">
+                </div>
+
+                <label>Exploración física detallada</label>
+                <textarea id="notaExploracion"></textarea>
+
+                <h4>Curvas de crecimiento (nota clínica)</h4>
+                <label>Notas / interpretación de curvas</label>
+                <textarea id="notaCurvasTexto"></textarea>
+                <label>Marcas / anotaciones específicas</label>
+                <textarea id="notaCurvasNotas"></textarea>
+                <p class="small-note">Agrega tablas de peso/talla. Doble clic para verlas al 70% de la pantalla.</p>
+                <input type="file" id="notaInputCurvasImagenes" multiple accept="image/*">
+                <div id="notaCurvasImageArea" class="image-area">
+                    <span class="small-note">Vista previa de tablas / curvas:</span>
+                </div>
+
+                <h4>Imágenes de exploración física (nota clínica)</h4>
+                <p class="small-note">Puedes subir imágenes clínicas. Haz clic para verlas a pantalla completa.</p>
+                <input type="file" id="notaInputExploracionImagenes" multiple accept="image/*">
+                <div id="notaExploracionImageArea" class="image-area">
+                    <span class="small-note">Vista previa de imágenes de exploración:</span>
+                </div>
+            </div>
+
+            <h3>Estudios de laboratorio y gabinete (nota clínica)</h3>
+            <div class="section-content">
+                <textarea id="notaEstudiosTexto" placeholder="Descripción, resultados relevantes, interpretación, etc."></textarea>
+                <p class="small-note">Puedes subir imágenes (RX, USG, TAC, ECG, fotos clínicas). Haz clic en ellas para verlas a pantalla completa.</p>
+                <input type="file" id="notaInputEstudiosImagenes" multiple accept="image/*">
+                <div id="notaEstudiosImageArea" class="image-area">
+                    <span class="small-note">Vista previa de imágenes:</span>
+                </div>
+            </div>
+
+            <h3>Diagnóstico (nota clínica)</h3>
+            <div class="section-content">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" class="notaDxCheck" value="Sin cambios"> Sin cambios</label>
+                    <label><input type="checkbox" class="notaDxCheck" value="Mejoría clínica"> Mejoría clínica</label>
+                    <label><input type="checkbox" class="notaDxCheck" value="Deterioro clínico"> Deterioro clínico</label>
+                </div>
+                <label>Diagnósticos (libre)</label>
+                <input type="text" id="notaDx1" placeholder="1.">
+                <input type="text" id="notaDx2" placeholder="2.">
+                <input type="text" id="notaDx3" placeholder="3.">
+                <input type="text" id="notaDx4" placeholder="4.">
+                <textarea id="notaDxTexto" placeholder="Diagnóstico(s) específico(s) de esta nota."></textarea>
+            </div>
+
+            <h3>Tratamiento (nota clínica)</h3>
+            <div class="section-content">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" class="notaTxCheck" value="Sin cambios"> Sin cambios</label>
+                    <label><input type="checkbox" class="notaTxCheck" value="Ajuste de dosis"> Ajuste de dosis</label>
+                    <label><input type="checkbox" class="notaTxCheck" value="Nuevo medicamento"> Nuevo medicamento</label>
+                </div>
+                <label>Tratamiento (libre)</label>
+                <input type="text" id="notaTx1" placeholder="1.">
+                <input type="text" id="notaTx2" placeholder="2.">
+                <input type="text" id="notaTx3" placeholder="3.">
+                <input type="text" id="notaTx4" placeholder="4.">
+                <textarea id="notaTxTexto" placeholder="Cambios o indicaciones específicas de esta nota."></textarea>
+            </div>
+
+            <button class="btn small" id="btnGuardarNota">Guardar nota clínica</button>
+        </div>
+
+        <div id="listaNotas"></div>
+    </div>
+</div>
+
+<div id="imageModal" class="image-modal">
+    <button id="btnCerrarModal">Cerrar imagen</button>
+    <img id="modalImg" src="" alt="Imagen">
+</div>
+
+<div id="growthModal" class="image-modal growth-modal">
+    <button id="btnCerrarGrowthModal">Cerrar imagen</button>
+    <img id="growthModalImg" src="" alt="Curva">
+</div>
+
+<script>
+    const STORAGE_KEY = 'expedientePediatricoPacientes';
+
+    let pacientes = [];
+    let pacienteActualIndex = null;
+
+    const listaPacientes = document.getElementById('listaPacientes');
+    const btnNuevoPaciente = document.getElementById('btnNuevoPaciente');
+    const btnOrdenarNombre = document.getElementById('btnOrdenarNombre');
+    const btnGuardar = document.getElementById('btnGuardar');
+
+    const menorUnAnio = document.getElementById('menorUnAnio');
+    const pcContainer = document.getElementById('pcContainer');
+
+    const inputImagenes = document.getElementById('inputImagenes');
+    const imageArea = document.getElementById('imageArea');
+    const imageModal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImg');
+    const btnCerrarModal = document.getElementById('btnCerrarModal');
+
+    const btnHistorialPeso = document.getElementById('btnHistorialPeso');
+    const historialPesoDiv = document.getElementById('historialPeso');
+    const historialPesoLista = document.getElementById('historialPesoLista');
+
+    const inputCurvasImagenes = document.getElementById('inputCurvasImagenes');
+    const curvasImageArea = document.getElementById('curvasImageArea');
+    const curvasTexto = document.getElementById('curvasTexto');
+    const curvasNotas = document.getElementById('curvasNotas');
+    const growthModal = document.getElementById('growthModal');
+    const growthModalImg = document.getElementById('growthModalImg');
+    const btnCerrarGrowthModal = document.getElementById('btnCerrarGrowthModal');
+
+    const btnAgregarNota = document.getElementById('btnAgregarNota');
+    const formNota = document.getElementById('formNota');
+    const notaPacienteInfo = document.getElementById('notaPacienteInfo');
+    const notaNombre = document.getElementById('notaNombre');
+    const notaEdad = document.getElementById('notaEdad');
+    const notaFecha = document.getElementById('notaFecha');
+    const notaHora = document.getElementById('notaHora');
+    const notaAntecedentes = document.getElementById('notaAntecedentes');
+
+    const notaFc = document.getElementById('notaFc');
+    const notaFr = document.getElementById('notaFr');
+    const notaTemp = document.getElementById('notaTemp');
+    const notaSatO2 = document.getElementById('notaSatO2');
+    const notaTa = document.getElementById('notaTa');
+    const notaPeso = document.getElementById('notaPeso');
+    const notaTalla = document.getElementById('notaTalla');
+    const notaMenorUnAnio = document.getElementById('notaMenorUnAnio');
+    const notaPcContainer = document.getElementById('notaPcContainer');
+    const notaPc = document.getElementById('notaPc');
+    const notaExploracion = document.getElementById('notaExploracion');
+
+    const notaCurvasTexto = document.getElementById('notaCurvasTexto');
+    const notaCurvasNotas = document.getElementById('notaCurvasNotas');
+    const notaInputCurvasImagenes = document.getElementById('notaInputCurvasImagenes');
+    const notaCurvasImageArea = document.getElementById('notaCurvasImageArea');
+
+    const notaInputExploracionImagenes = document.getElementById('notaInputExploracionImagenes');
+    const notaExploracionImageArea = document.getElementById('notaExploracionImageArea');
+
+    const notaEstudiosTexto = document.getElementById('notaEstudiosTexto');
+    const notaInputEstudiosImagenes = document.getElementById('notaInputEstudiosImagenes');
+    const notaEstudiosImageArea = document.getElementById('notaEstudiosImageArea');
+
+    const notaDxTexto = document.getElementById('notaDxTexto');
+    const notaDx1 = document.getElementById('notaDx1');
+    const notaDx2 = document.getElementById('notaDx2');
+    const notaDx3 = document.getElementById('notaDx3');
+    const notaDx4 = document.getElementById('notaDx4');
+
+    const notaTxTexto = document.getElementById('notaTxTexto');
+    const notaTx1 = document.getElementById('notaTx1');
+    const notaTx2 = document.getElementById('notaTx2');
+    const notaTx3 = document.getElementById('notaTx3');
+    const notaTx4 = document.getElementById('notaTx4');
+
+    const btnGuardarNota = document.getElementById('btnGuardarNota');
+    const listaNotas = document.getElementById('listaNotas');
+
+    function guardarEnLocalStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(pacientes));
+        } catch (e) {
+            console.error('Error guardando en LocalStorage', e);
+        }
+    }
+
+    function cargarDesdeLocalStorage() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                pacientes = JSON.parse(data);
+            } else {
+                pacientes = [];
+            }
+        } catch (e) {
+            pacientes = [];
+        }
+        renderListaPacientes();
+    }
+
+    menorUnAnio.addEventListener('change', () => {
+        pcContainer.style.display = menorUnAnio.value === 'si' ? 'block' : 'none';
+    });
+
+    notaMenorUnAnio.addEventListener('change', () => {
+        notaPcContainer.style.display = notaMenorUnAnio.value === 'si' ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.section-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const targetId = toggle.getAttribute('data-target');
+            const section = document.getElementById(targetId);
+            if (section.style.display === 'none' || section.style.display === '') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        });
+    });
+
+    btnNuevoPaciente.addEventListener('click', () => {
+        pacienteActualIndex = null;
+        limpiarFormulario();
+        btnAgregarNota.disabled = true;
+        formNota.style.display = 'none';
+        listaNotas.innerHTML = '';
+        historialPesoLista.innerHTML = '';
+        curvasImageArea.innerHTML = '<span class="small-note">Vista previa de tablas / curvas:</span>';
+    });
+
+    btnGuardar.addEventListener('click', () => {
+        const paciente = leerFormulario();
+        if (!paciente.nombre) {
+            alert('El nombre del paciente es obligatorio.');
+            return;
+        }
+
+        const hoy = new Date();
+        const fechaConsulta = hoy.toISOString().slice(0,10);
+
+        if (!paciente.historialPeso) paciente.historialPeso = [];
+        if (paciente.peso) {
+            paciente.historialPeso.push({
+                fecha: fechaConsulta,
+                peso: paciente.peso
+            });
+        }
+
+        if (pacienteActualIndex === null) {
+            pacientes.push(paciente);
+            pacienteActualIndex = pacientes.length - 1;
+        } else {
+            const notasPrevias = pacientes[pacienteActualIndex].notasClinicas || [];
+            paciente.notasClinicas = notasPrevias;
+            const historialPrevio = pacientes[pacienteActualIndex].historialPeso || [];
+            paciente.historialPeso = historialPrevio.concat(paciente.historialPeso);
+            pacientes[pacienteActualIndex] = paciente;
+        }
+
+        guardarEnLocalStorage();
+        renderListaPacientes();
+        btnAgregarNota.disabled = true; // se habilita al cargar paciente
+    });
+
+    btnOrdenarNombre.addEventListener('click', () => {
+        pacientes.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+        guardarEnLocalStorage();
+        renderListaPacientes();
+    });
+
+    function renderListaPacientes() {
+        listaPacientes.innerHTML = '';
+        pacientes.forEach((p, index) => {
+            const li = document.createElement('li');
+            li.textContent = p.nombre + (p.edad ? ' (' + p.edad + ' años)' : '');
+            li.addEventListener('dblclick', () => {
+                cargarPaciente(index);
+            });
+            listaPacientes.appendChild(li);
+        });
+    }
+
+    function leerFormulario() {
+        const dxChecks = Array.from(document.querySelectorAll('.dxCheck:checked')).map(c => c.value);
+        const txChecks = Array.from(document.querySelectorAll('.txCheck:checked')).map(c => c.value);
+        const imagenes = Array.from(imageArea.querySelectorAll('img')).map(img => img.src);
+        const curvasImagenes = Array.from(curvasImageArea.querySelectorAll('img')).map(img => img.src);
+
+        let notasClinicas = [];
+        let historialPeso = [];
+        if (pacienteActualIndex !== null) {
+            if (pacientes[pacienteActualIndex].notasClinicas) {
+                notasClinicas = pacientes[pacienteActualIndex].notasClinicas;
+            }
+            if (pacientes[pacienteActualIndex].historialPeso) {
+                historialPeso = pacientes[pacienteActualIndex].historialPeso;
+            }
+        }
+
+        return {
+            nombre: document.getElementById('nombre').value.trim(),
+            edad: document.getElementById('edad').value,
+            fechaNacimiento: document.getElementById('fechaNacimiento').value,
+            lugarNacimiento: document.getElementById('lugarNacimiento').value,
+            alergias: document.getElementById('alergias').value,
+            enfermedadesSubyacentes: document.getElementById('enfermedadesSubyacentes').value,
+            hospitalizacionesPrevias: document.getElementById('hospitalizacionesPrevias').value,
+            antecedentesPerinatales: document.getElementById('antecedentesPerinatales').value,
+            fc: document.getElementById('fc').value,
+            fr: document.getElementById('fr').value,
+            temp: document.getElementById('temp').value,
+            satO2: document.getElementById('satO2').value,
+            ta: document.getElementById('ta').value,
+            peso: document.getElementById('peso').value,
+            talla: document.getElementById('talla').value,
+            menorUnAnio: document.getElementById('menorUnAnio').value,
+            pc: document.getElementById('pc').value,
+            exploracionFisica: document.getElementById('exploracionFisica').value,
+            estudiosTexto: document.getElementById('estudiosTexto').value,
+            imagenes: imagenes,
+            dxChecks,
+            dx1: document.getElementById('dx1').value,
+            dx2: document.getElementById('dx2').value,
+            dx3: document.getElementById('dx3').value,
+            dx4: document.getElementById('dx4').value,
+            dxTexto: document.getElementById('dxTexto').value,
+            txChecks,
+            tx1: document.getElementById('tx1').value,
+            tx2: document.getElementById('tx2').value,
+            tx3: document.getElementById('tx3').value,
+            tx4: document.getElementById('tx4').value,
+            txTexto: document.getElementById('txTexto').value,
+            notasClinicas,
+            historialPeso,
+            curvasTexto: curvasTexto.value,
+            curvasNotas: curvasNotas.value,
+            curvasImagenes
+        };
+    }
+
+    function cargarPaciente(index) {
+        const p = pacientes[index];
+        pacienteActualIndex = index;
+
+        document.getElementById('nombre').value = p.nombre || '';
+        document.getElementById('edad').value = p.edad || '';
+        document.getElementById('fechaNacimiento').value = p.fechaNacimiento || '';
+        document.getElementById('lugarNacimiento').value = p.lugarNacimiento || '';
+        document.getElementById('alergias').value = p.alergias || '';
+        document.getElementById('enfermedadesSubyacentes').value = p.enfermedadesSubyacentes || '';
+        document.getElementById('hospitalizacionesPrevias').value = p.hospitalizacionesPrevias || '';
+        document.getElementById('antecedentesPerinatales').value = p.antecedentesPerinatales || '';
+        document.getElementById('fc').value = p.fc || '';
+        document.getElementById('fr').value = p.fr || '';
+        document.getElementById('temp').value = p.temp || '';
+        document.getElementById('satO2').value = p.satO2 || '';
+        document.getElementById('ta').value = p.ta || '';
+        document.getElementById('peso').value = p.peso || '';
+        document.getElementById('talla').value = p.talla || '';
+        document.getElementById('menorUnAnio').value = p.menorUnAnio || 'no';
+        pcContainer.style.display = (p.menorUnAnio === 'si') ? 'block' : 'none';
+        document.getElementById('pc').value = p.pc || '';
+        document.getElementById('exploracionFisica').value = p.exploracionFisica || '';
+        document.getElementById('estudiosTexto').value = p.estudiosTexto || '';
+
+        document.querySelectorAll('.dxCheck').forEach(c => {
+            c.checked = p.dxChecks && p.dxChecks.includes(c.value);
+        });
+        document.getElementById('dx1').value = p.dx1 || '';
+        document.getElementById('dx2').value = p.dx2 || '';
+        document.getElementById('dx3').value = p.dx3 || '';
+        document.getElementById('dx4').value = p.dx4 || '';
+        document.getElementById('dxTexto').value = p.dxTexto || '';
+
+        document.querySelectorAll('.txCheck').forEach(c => {
+            c.checked = p.txChecks && p.txChecks.includes(c.value);
+        });
+        document.getElementById('tx1').value = p.tx1 || '';
+        document.getElementById('tx2').value = p.tx2 || '';
+        document.getElementById('tx3').value = p.tx3 || '';
+        document.getElementById('tx4').value = p.tx4 || '';
+        document.getElementById('txTexto').value = p.txTexto || '';
+
+        imageArea.innerHTML = '<span class="small-note">Vista previa de imágenes:</span>';
+        if (p.imagenes && p.imagenes.length > 0) {
+            p.imagenes.forEach(src => {
+                agregarImagenPreview(src);
+            });
+        }
+
+        curvasTexto.value = p.curvasTexto || '';
+        curvasNotas.value = p.curvasNotas || '';
+        curvasImageArea.innerHTML = '<span class="small-note">Vista previa de tablas / curvas:</span>';
+        if (p.curvasImagenes && p.curvasImagenes.length > 0) {
+            p.curvasImagenes.forEach(src => {
+                agregarCurvaPreview(src);
+            });
+        }
+
+        btnAgregarNota.disabled = false;
+        formNota.style.display = 'none';
+        limpiarFormularioNota();
+        renderNotasClinicas();
+        renderHistorialPeso();
+    }
+
+    function limpiarFormulario() {
+        document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea').forEach(el => el.value = '');
+        document.querySelectorAll('.dxCheck, .txCheck').forEach(c => c.checked = false);
+        document.getElementById('menorUnAnio').value = 'no';
+        pcContainer.style.display = 'none';
+        imageArea.innerHTML = '<span class="small-note">Vista previa de imágenes:</span>';
+        curvasImageArea.innerHTML = '<span class="small-note">Vista previa de tablas / curvas:</span>';
+        historialPesoLista.innerHTML = '';
+    }
+
+    inputImagenes.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                agregarImagenPreview(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        inputImagenes.value = '';
+    });
+
+    function agregarImagenPreview(src) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-preview';
+        const img = document.createElement('img');
+        img.src = src;
+        wrapper.appendChild(img);
+        wrapper.addEventListener('click', () => {
+            modalImg.src = src;
+            imageModal.style.display = 'flex';
+        });
+        imageArea.appendChild(wrapper);
+    }
+
+    btnCerrarModal.addEventListener('click', () => {
+        imageModal.style.display = 'none';
+        modalImg.src = '';
+    });
+
+    imageModal.addEventListener('click', (e) => {
+        if (e.target === imageModal) {
+            imageModal.style.display = 'none';
+            modalImg.src = '';
+        }
+    });
+
+    btnHistorialPeso.addEventListener('click', () => {
+        historialPesoDiv.style.display = (historialPesoDiv.style.display === 'none' || historialPesoDiv.style.display === '') ? 'block' : 'none';
+    });
+
+    function renderHistorialPeso() {
+        historialPesoLista.innerHTML = '';
+        if (pacienteActualIndex === null) return;
+        const p = pacientes[pacienteActualIndex];
+        const hist = p.historialPeso || [];
+        if (hist.length === 0) {
+            historialPesoLista.innerHTML = '<p class="small-note">Sin registros previos de peso.</p>';
+            return;
+        }
+        hist.forEach(reg => {
+            const div = document.createElement('div');
+            div.textContent = (reg.fecha || 'Fecha desconocida') + ' → ' + (reg.peso || '?') + ' kg';
+            historialPesoLista.appendChild(div);
+        });
+    }
+
+    inputCurvasImagenes.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                agregarCurvaPreview(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        inputCurvasImagenes.value = '';
+    });
+
+    function agregarCurvaPreview(src) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-preview';
+        const img = document.createElement('img');
+        img.src = src;
+        wrapper.appendChild(img);
+        wrapper.addEventListener('dblclick', () => {
+            growthModalImg.src = src;
+            growthModal.style.display = 'flex';
+        });
+        curvasImageArea.appendChild(wrapper);
+    }
+
+    btnCerrarGrowthModal.addEventListener('click', () => {
+        growthModal.style.display = 'none';
+        growthModalImg.src = '';
+    });
+
+    growthModal.addEventListener('click', (e) => {
+        if (e.target === growthModal) {
+            growthModal.style.display = 'none';
+            growthModalImg.src = '';
+        }
+    });
+
+    notaInputCurvasImagenes.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                agregarNotaCurvaPreview(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        notaInputCurvasImagenes.value = '';
+    });
+
+    function agregarNotaCurvaPreview(src) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-preview';
+        const img = document.createElement('img');
+        img.src = src;
+        wrapper.appendChild(img);
+        wrapper.addEventListener('dblclick', () => {
+            growthModalImg.src = src;
+            growthModal.style.display = 'flex';
+        });
+        notaCurvasImageArea.appendChild(wrapper);
+    }
+
+    notaInputExploracionImagenes.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                agregarNotaExploracionPreview(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        notaInputExploracionImagenes.value = '';
+    });
+
+    function agregarNotaExploracionPreview(src) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-preview';
+        const img = document.createElement('img');
+        img.src = src;
+        wrapper.appendChild(img);
+        wrapper.addEventListener('click', () => {
+            modalImg.src = src;
+            imageModal.style.display = 'flex';
+        });
+        notaExploracionImageArea.appendChild(wrapper);
+    }
+
+    notaInputEstudiosImagenes.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                agregarNotaEstudiosPreview(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        notaInputEstudiosImagenes.value = '';
+    });
+
+    function agregarNotaEstudiosPreview(src) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-preview';
+        const img = document.createElement('img');
+        img.src = src;
+        wrapper.appendChild(img);
+        wrapper.addEventListener('click', () => {
+            modalImg.src = src;
+            imageModal.style.display = 'flex';
+        });
+        notaEstudiosImageArea.appendChild(wrapper);
+    }
+
+    btnAgregarNota.addEventListener('click', () => {
+        if (pacienteActualIndex === null) {
+            alert('Primero selecciona o guarda un paciente.');
+            return;
+        }
+        const p = pacientes[pacienteActualIndex];
+        formNota.style.display = (formNota.style.display === 'none' || formNota.style.display === '') ? 'block' : 'none';
+        notaPacienteInfo.textContent = 'Paciente: ' + (p.nombre || '') + (p.edad ? ' (' + p.edad + ' años)' : '');
+        notaNombre.value = p.nombre || '';
+        notaEdad.value = p.edad || '';
+
+        const ahora = new Date();
+        notaFecha.value = ahora.toISOString().slice(0,10);
+        notaHora.value = ahora.toTimeString().slice(0,5);
+    });
+
+    function limpiarFormularioNota() {
+        notaAntecedentes.value = '';
+        notaFc.value = '';
+        notaFr.value = '';
+        notaTemp.value = '';
+        notaSatO2.value = '';
+        notaTa.value = '';
+        notaPeso.value = '';
+        notaTalla.value = '';
+        notaMenorUnAnio.value = 'no';
+        notaPcContainer.style.display = 'none';
+        notaPc.value = '';
+        notaExploracion.value = '';
+        notaCurvasTexto.value = '';
+        notaCurvasNotas.value = '';
+        notaCurvasImageArea.innerHTML = '<span class="small-note">Vista previa de tablas / curvas:</span>';
+        notaExploracionImageArea.innerHTML = '<span class="small-note">Vista previa de imágenes de exploración:</span>';
+        notaEstudiosTexto.value = '';
+        notaEstudiosImageArea.innerHTML = '<span class="small-note">Vista previa de imágenes:</span>';
+        notaDxTexto.value = '';
+        notaDx1.value = '';
+        notaDx2.value = '';
+        notaDx3.value = '';
+        notaDx4.value = '';
+        notaTxTexto.value = '';
+        notaTx1.value = '';
+        notaTx2.value = '';
+        notaTx3.value = '';
+        notaTx4.value = '';
+        notaFecha.value = '';
+        notaHora.value = '';
+        document.querySelectorAll('.notaDxCheck, .notaTxCheck').forEach(c => c.checked = false);
+    }
+
+    btnGuardarNota.addEventListener('click', () => {
+        if (pacienteActualIndex === null) {
+            alert('No hay paciente seleccionado.');
+            return;
+        }
+        const p = pacientes[pacienteActualIndex];
+
+        const dxChecks = Array.from(document.querySelectorAll('.notaDxCheck:checked')).map(c => c.value);
+        const txChecks = Array.from(document.querySelectorAll('.notaTxCheck:checked')).map(c => c.value);
+
+        const ahora = new Date();
+        const fechaHoraRegistro = ahora.toLocaleString('es-MX', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const curvasImagenesNota = Array.from(notaCurvasImageArea.querySelectorAll('img')).map(img => img.src);
+        const exploracionImagenesNota = Array.from(notaExploracionImageArea.querySelectorAll('img')).map(img => img.src);
+        const estudiosImagenesNota = Array.from(notaEstudiosImageArea.querySelectorAll('img')).map(img => img.src);
+
+        const nota = {
+            fechaConsulta: notaFecha.value || '',
+            horaConsulta: notaHora.value || '',
+            fechaHoraRegistro,
+            antecedentes: notaAntecedentes.value,
+            fc: notaFc.value,
+            fr: notaFr.value,
+            temp: notaTemp.value,
+            satO2: notaSatO2.value,
+            ta: notaTa.value,
+            peso: notaPeso.value,
+            talla: notaTalla.value,
+            menorUnAnio: notaMenorUnAnio.value,
+            pc: notaPc.value,
+            exploracion: notaExploracion.value,
+            curvasTexto: notaCurvasTexto.value,
+            curvasNotas: notaCurvasNotas.value,
+            curvasImagenes: curvasImagenesNota,
+            exploracionImagenes: exploracionImagenesNota,
+            estudiosTexto: notaEstudiosTexto.value,
+            estudiosImagenes: estudiosImagenesNota,
+            dxChecks,
+            dx1: notaDx1.value,
+            dx2: notaDx2.value,
+            dx3: notaDx3.value,
+            dx4: notaDx4.value,
+            dxTexto: notaDxTexto.value,
+            txChecks,
+            tx1: notaTx1.value,
+            tx2: notaTx2.value,
+            tx3: notaTx3.value,
+            tx4: notaTx4.value,
+            txTexto: notaTxTexto.value
+        };
+
+        if (!p.notasClinicas) {
+            p.notasClinicas = [];
+        }
+        p.notasClinicas.push(nota);
+        pacientes[pacienteActualIndex] = p;
+        guardarEnLocalStorage();
+        limpiarFormularioNota();
+        formNota.style.display = 'none';
+        renderNotasClinicas();
+        renderHistorialPeso();
+    });
+
+    function renderNotasClinicas() {
+        listaNotas.innerHTML = '';
+        if (pacienteActualIndex === null) return;
+        const p = pacientes[pacienteActualIndex];
+        const notas = p.notasClinicas || [];
+        if (notas.length === 0) {
+            listaNotas.innerHTML = '<p class="small-note">Este paciente aún no tiene notas clínicas subsecuentes.</p>';
+            return;
+        }
+
+        notas.forEach((nota, idx) => {
+            const card = document.createElement('div');
+            card.className = 'nota-card';
+
+            const header = document.createElement('div');
+            header.className = 'nota-header';
+            const titulo = document.createElement('span');
+            titulo.textContent = 'Nota clínica #' + (idx + 1);
+            const meta = document.createElement('span');
+            meta.className = 'nota-meta';
+            meta.textContent = (nota.fechaConsulta || 'Sin fecha') + ' ' + (nota.horaConsulta || '') + ' · Registrada: ' + (nota.fechaHoraRegistro || '');
+            header.appendChild(titulo);
+            header.appendChild(meta);
+
+            const body = document.createElement('div');
+            body.className = 'nota-body';
+
+            const seccionDatos = document.createElement('div');
+            seccionDatos.innerHTML = `
+                <div class="readonly-label">Datos de la consulta</div>
+                <div class="readonly-field">
+Fecha: ${nota.fechaConsulta || '—'}
+Hora: ${nota.horaConsulta || '—'}
+                </div>
+            `;
+
+            const seccionAntecedentes = document.createElement('div');
+            seccionAntecedentes.innerHTML = `
+                <div class="readonly-label">Antecedentes</div>
+                <div class="readonly-field">${(nota.antecedentes || '').replace(/\n/g, '\n')}</div>
+            `;
+
+            const seccionExploracion = document.createElement('div');
+            seccionExploracion.innerHTML = `
+                <div class="readonly-label">Signos vitales</div>
+                <div class="readonly-field">
+FC: ${nota.fc || '—'} lpm
+FR: ${nota.fr || '—'} rpm
+Temp: ${nota.temp || '—'} °C
+SatO₂: ${nota.satO2 || '—'} %
+TA: ${nota.ta || '—'}
+Peso: ${nota.peso || '—'} kg
+Talla: ${nota.talla || '—'} cm
+Menor de 1 año: ${nota.menorUnAnio === 'si' ? 'Sí' : 'No'}
+Perímetro cefálico: ${nota.pc || '—'} cm
+                </div>
+                <div class="readonly-label">Exploración física detallada</div>
+                <div class="readonly-field">${(nota.exploracion || '').replace(/\n/g, '\n')}</div>
+            `;
+
+            const seccionCurvas = document.createElement('div');
+            seccionCurvas.innerHTML = `
+                <div class="readonly-label">Curvas de crecimiento</div>
+                <div class="readonly-label">Notas / interpretación</div>
+                <div class="readonly-field">${(nota.curvasTexto || '').replace(/\n/g, '\n')}</div>
+                <div class="readonly-label">Marcas / anotaciones</div>
+                <div class="readonly-field">${(nota.curvasNotas || '').replace(/\n/g, '\n')}</div>
+            `;
+
+            const curvasImgContainer = document.createElement('div');
+            curvasImgContainer.className = 'image-area';
+            const curvasTitle = document.createElement('div');
+            curvasTitle.className = 'small-note';
+            curvasTitle.textContent = 'Tablas / curvas:';
+            curvasImgContainer.appendChild(curvasTitle);
+            if (nota.curvasImagenes && nota.curvasImagenes.length > 0) {
+                nota.curvasImagenes.forEach(src => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'image-preview';
+                    const img = document.createElement('img');
+                    img.src = src;
+                    wrapper.appendChild(img);
+                    wrapper.addEventListener('dblclick', () => {
+                        growthModalImg.src = src;
+                        growthModal.style.display = 'flex';
+                    });
+                    curvasImgContainer.appendChild(wrapper);
+                });
+            }
+
+            const seccionExploracionImgs = document.createElement('div');
+            seccionExploracionImgs.innerHTML = `<div class="readonly-label">Imágenes de exploración física</div>`;
+            const explImgContainer = document.createElement('div');
+            explImgContainer.className = 'image-area';
+            const explTitle = document.createElement('div');
+            explTitle.className = 'small-note';
+            explTitle.textContent = 'Imágenes clínicas:';
+            explImgContainer.appendChild(explTitle);
+            if (nota.exploracionImagenes && nota.exploracionImagenes.length > 0) {
+                nota.exploracionImagenes.forEach(src => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'image-preview';
+                    const img = document.createElement('img');
+                    img.src = src;
+                    wrapper.appendChild(img);
+                    wrapper.addEventListener('click', () => {
+                        modalImg.src = src;
+                        imageModal.style.display = 'flex';
+                    });
+                    explImgContainer.appendChild(wrapper);
+                });
+            }
+            seccionExploracionImgs.appendChild(explImgContainer);
+
+            const seccionEstudios = document.createElement('div');
+            seccionEstudios.innerHTML = `
+                <div class="readonly-label">Estudios de laboratorio y gabinete</div>
+                <div class="readonly-field">${(nota.estudiosTexto || '').replace(/\n/g, '\n')}</div>
+            `;
+            const estImgContainer = document.createElement('div');
+            estImgContainer.className = 'image-area';
+            const estTitle = document.createElement('div');
+            estTitle.className = 'small-note';
+            estTitle.textContent = 'Imágenes de estudios:';
+            estImgContainer.appendChild(estTitle);
+            if (nota.estudiosImagenes && nota.estudiosImagenes.length > 0) {
+                nota.estudiosImagenes.forEach(src => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'image-preview';
+                    const img = document.createElement('img');
+                    img.src = src;
+                    wrapper.appendChild(img);
+                    wrapper.addEventListener('click', () => {
+                        modalImg.src = src;
+                        imageModal.style.display = 'flex';
+                    });
+                    estImgContainer.appendChild(wrapper);
+                });
+            }
+            seccionEstudios.appendChild(estImgContainer);
+
+            const seccionDx = document.createElement('div');
+            seccionDx.innerHTML = `
+                <div class="readonly-label">Diagnóstico</div>
+                <div class="readonly-field">
+Checks: ${nota.dxChecks && nota.dxChecks.length ? nota.dxChecks.join(', ') : '—'}
+1. ${nota.dx1 || ''}
+2. ${nota.dx2 || ''}
+3. ${nota.dx3 || ''}
+4. ${nota.dx4 || ''}
+Texto: ${(nota.dxTexto || '').replace(/\n/g, '\n')}
+                </div>
+            `;
+
+            const seccionTx = document.createElement('div');
+            seccionTx.innerHTML = `
+                <div class="readonly-label">Tratamiento</div>
+                <div class="readonly-field">
+Checks: ${nota.txChecks && nota.txChecks.length ? nota.txChecks.join(', ') : '—'}
+1. ${nota.tx1 || ''}
+2. ${nota.tx2 || ''}
+3. ${nota.tx3 || ''}
+4. ${nota.tx4 || ''}
+Texto: ${(nota.txTexto || '').replace(/\n/g, '\n')}
+                </div>
+            `;
+
+            body.appendChild(seccionDatos);
+            body.appendChild(seccionAntecedentes);
+            body.appendChild(seccionExploracion);
+            body.appendChild(seccionCurvas);
+            body.appendChild(curvasImgContainer);
+            body.appendChild(seccionExploracionImgs);
+            body.appendChild(seccionEstudios);
+            body.appendChild(seccionDx);
+            body.appendChild(seccionTx);
+
+            header.addEventListener('click', () => {
+                body.style.display = (body.style.display === 'none' || body.style.display === '') ? 'block' : 'none';
+            });
+
+            card.appendChild(header);
+            card.appendChild(body);
+            listaNotas.appendChild(card);
+        });
+    }
+
+    cargarDesdeLocalStorage();
+</script>
+
+</body>
+</html>
